@@ -9,36 +9,36 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
 
-  # ---------- PYTHON (apps/worker && apps/api) ----------
+  # ---------- PYTHON (api) ----------
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.9
     hooks:
       - id: ruff
         name: ruff (lint + fix)
         args: [--fix]
-        files: ^apps/(worker|api)/.*\.py$
+        files: ^api/.*\.py$
       - id: ruff-format
         name: ruff (format)
-        files: ^apps/(worker|api)/.*\.py$
+        files: ^api/.*\.py$
 
-  # ---------- FRONTEND (apps/web) ----------
+  # ---------- FRONTEND (web) ----------
   - repo: local
     hooks:
       - id: web-prettier
-        name: prettier (apps/web)
-        entry: bash -lc "pnpm -C apps/web run format:fix"
+        name: prettier (web)
+        entry: bash -lc "pnpm -C web run format:fix"
         language: system
         pass_filenames: false
-        files: ^apps/web/
+        files: ^web/
       - id: web-eslint
-        name: eslint (apps/web)
-        entry: bash -lc "pnpm -C apps/web run lint"
+        name: eslint (web)
+        entry: bash -lc "pnpm -C web run lint"
         language: system
         pass_filenames: false
-        files: ^apps/web/.*\.(ts|tsx|js|jsx)$
+        files: ^web/.*\.(ts|tsx|js|jsx)$
       - id: web-tsc
-        name: tsc (apps/web)
-        entry: bash -lc "pnpm -C apps/web run typecheck"
+        name: tsc (web)
+        entry: bash -lc "pnpm -C web run typecheck"
         language: system
         pass_filenames: false
-        files: ^apps/web/.*\.(ts|tsx)$
+        files: ^web/.*\.(ts|tsx)$

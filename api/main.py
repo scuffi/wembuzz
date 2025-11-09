@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi_crons import get_cron_router
 
+from models import Event
+from events.stadium import Stadium
 from events.ovo import OVOArena
 
 app = FastAPI()
@@ -16,8 +18,13 @@ def health():
 
 @app.get("/events")
 def get_events():
-    venue1 = OVOArena()
-    return {"events": venue1.get_events()}
+    events: list[Event] = []
+    for venue in [OVOArena(), Stadium()]:
+        events.extend(venue.get_events())
+
+    events.sort(key=lambda x: x.start_date)
+
+    return {"events": events}
 
 
 if __name__ == "__main__":
