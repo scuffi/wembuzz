@@ -11,3 +11,4 @@ class Event(BaseModel):
     url: str
     image_url: str
     venue: str
+    crowding_level: int | None = None
