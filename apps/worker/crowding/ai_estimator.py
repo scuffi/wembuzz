@@ -1,10 +1,11 @@
+import os
 from openai import OpenAI
 
 from models import Event
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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",
+    api_key=os.getenv("OPENROUTER_KEY"),
 )
 
 
