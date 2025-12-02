@@ -28,7 +28,8 @@ class Screen:
         parallel: int = 1,
         pwm_bits: int = 11,
         brightness: int = 100,
-        gpio_slowdown: int = 1,
+        gpio_slowdown: int = 4,
+        disable_hardware_pulsing: bool = True,
         **kwargs,
     ):
         """
@@ -50,6 +51,7 @@ class Screen:
 
         # Configure RGBMatrix options
         options = RGBMatrixOptions()
+        options.disable_hardware_pulsing = disable_hardware_pulsing
         options.hardware_mapping = hardware_mapping
         options.rows = height
         options.cols = width
