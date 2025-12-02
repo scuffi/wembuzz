@@ -253,9 +253,10 @@ class TextComponent(Component):
         elif self._animation_type == AnimationType.SLIDE_UP:
             # New text slides in from bottom, old text slides out to top
             # Use font height for smoother animation even with small regions
-            slide_distance = max(
-                self.region.height, self.font.height if self.font else 8
+            font_height = (
+                self.font.height if (self.font and hasattr(self.font, "height")) else 8
             )
+            slide_distance = max(self.region.height, font_height)
             new_offset_x = 0
             old_offset_x = 0
             new_offset_y = int(-(1 - progress) * slide_distance)
@@ -263,9 +264,10 @@ class TextComponent(Component):
         elif self._animation_type == AnimationType.SLIDE_DOWN:
             # New text slides in from top, old text slides out to bottom
             # Use font height for smoother animation even with small regions
-            slide_distance = max(
-                self.region.height, self.font.height if self.font else 8
+            font_height = (
+                self.font.height if (self.font and hasattr(self.font, "height")) else 8
             )
+            slide_distance = max(self.region.height, font_height)
             new_offset_x = 0
             old_offset_x = 0
             new_offset_y = int((1 - progress) * slide_distance)
@@ -312,6 +314,34 @@ class TextComponent(Component):
         display_text = self._new_text if self._is_animating else self.text
         return self._calculate_text_position_for_text(display_text)
 
+    def _get_font_baseline(self) -> int:
+        """
+        Get font baseline offset, compatible with both emulator and real rgbmatrix.
+        Returns the baseline offset needed for proper text positioning.
+        """
+        if not self.font:
+            return 0
+
+        # Try to use baseline property if available (emulator has this)
+        if hasattr(self.font, "baseline"):
+            return self.font.baseline
+
+        # Try to use headers if available (emulator)
+        if hasattr(self.font, "headers"):
+            return self.font.headers.get("fbby", 0) + self.font.headers.get(
+                "fbbyoff", 0
+            )
+
+        # Fallback: use font height as baseline approximation
+        # This works for most fonts where baseline is roughly at the bottom
+        # Fallback: use font height as baseline approximation
+        # This works for most fonts where baseline is roughly at the bottom
+        if hasattr(self.font, "height"):
+            return self.font.height
+
+        # Last resort: assume baseline is same as height (common for bitmap fonts)
+        return 8  # Default fallback
+
     def _calculate_text_position_for_text(self, text: str) -> tuple:
         """Calculate text position for a specific text string."""
         if not self.font or not text:
@@ -335,18 +365,16 @@ class TextComponent(Component):
             text_x = self.region.x
 
         # Vertical alignment
-        baseline = self.font.headers.get("fbby", 0) + self.font.headers.get(
-            "fbbyoff", 0
-        )
+        baseline = self._get_font_baseline()
 
         if self.vertical_align == "top":
             text_y = self.region.y + baseline
         elif self.vertical_align == "center":
-            text_y = (
-                self.region.y + (self.region.height - self.font.height) // 2 + baseline
-            )
+            font_height = self.font.height if hasattr(self.font, "height") else 8
+            text_y = self.region.y + (self.region.height - font_height) // 2 + baseline
         elif self.vertical_align == "bottom":
-            text_y = self.region.y + self.region.height - self.font.height + baseline
+            font_height = self.font.height if hasattr(self.font, "height") else 8
+            text_y = self.region.y + self.region.height - font_height + baseline
 
         return (text_x, text_y)
 
@@ -366,10 +394,8 @@ class TextComponent(Component):
         if not self.font or not text:
             return
 
-        baseline = self.font.headers.get("fbby", 0) + self.font.headers.get(
-            "fbbyoff", 0
-        )
-        text_height = self.font.height
+        baseline = self._get_font_baseline()
+        text_height = self.font.height if hasattr(self.font, "height") else 8
 
         # Calculate actual text bounds (accounting for baseline)
         text_top = y - baseline
@@ -398,9 +424,7 @@ class TextComponent(Component):
                     missing=self.font.default_character,
                 ).todata(2)
 
-                font_y_offset = -(
-                    self.font.headers["fbby"] + self.font.headers["fbbyoff"]
-                )
+                font_y_offset = -self._get_font_baseline()
                 color_rgb = color.as_tuple()
 
                 # Render each pixel with strict region checking
@@ -541,7 +565,7 @@ class TextComponent(Component):
         # For now, just mark a few pixels
         if self.font:
             char_width = self.font.CharacterWidth(0) + 1
-            char_height = self.font.height
+            char_height = self.font.height if hasattr(self.font, "height") else 8
         else:
             char_width = 4
             char_height = 6
