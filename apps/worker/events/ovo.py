@@ -2,6 +2,7 @@ import json
 import requests
 from bs4 import BeautifulSoup, Tag
 
+from utils import generate_event_key
 from models import Event
 from .venue import Venue
 
@@ -32,6 +33,9 @@ class OVOArena(Venue):
                     status = obj.get("eventStatus")
                     events.append(
                         Event(
+                            key=generate_event_key(
+                                {"url": url, "title": title, "start_date": start}
+                            ),
                             name=title,
                             description=description,
                             start_date=start,

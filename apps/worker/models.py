@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class Event(BaseModel):
+    key: str
     name: str
     description: str
     status: str

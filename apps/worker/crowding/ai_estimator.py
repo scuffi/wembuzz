@@ -1,11 +1,10 @@
-import os
 from openai import OpenAI
-
 from models import Event
+from settings import settings
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_KEY"),
+    api_key=settings.openrouter_key,
 )
 
 
@@ -45,6 +44,7 @@ Based on the event details and the image provided, estimate how crowded this eve
 
 Assume that any given event will be at least crowded, so a low estimate does not mean the event will be empty, it just means the event will be less crowded than average.
 Smaller venues will generally be less crowded than larger venues, so a rating of 1 for OVO Arena is more likely than a rating of 1 for Wembley Stadium.
+A 'full' event at a smaller venue (~12.5k attendees) is likely to be around 3/5, a 'full' event at a larger venue (~90k attendees) is likely to be around 5/5.
 
 Please respond with:
 1. A integer value rating from 1-5 (where 1 = crowded, 5 = extremely crowded/sold out)

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import urljoin
 
+from utils import generate_event_key
 from models import Event
 from .venue import Venue
 
@@ -108,6 +109,9 @@ class Stadium(Venue):
         info_url = self._norm_url(info_a.get("href")) if info_a else None
 
         return Event(
+            key=generate_event_key(
+                {"url": info_url, "title": title, "start_date": start_local_iso}
+            ),
             name=title,
             description=description,
             start_date=start_local_iso,
