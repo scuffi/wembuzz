@@ -170,7 +170,7 @@ def planned_layout():
 
         # Render loop - runs at ~50 FPS
         screen.update()  # Update only dirty components
-        time.sleep(0.05)  # ~50 FPS for smooth
+        # time.sleep(0.05)  # ~50 FPS for smooth
 
 
 if __name__ == "__main__":
