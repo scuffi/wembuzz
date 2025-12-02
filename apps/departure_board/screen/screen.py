@@ -1,17 +1,19 @@
 """Main Screen/Display class for managing LED matrix display."""
 
+import os
+
 from typing import Dict, Optional, List
 from .layouts.layout import Layout
 from .components.base import Component
 from .utils import Region, Color
 
 # TODO: Support Conditional import for RGBMatrix
-# if os.environ.get("LED_ENV") == "emulator":
-#     from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
-# else:
-#     from rgbmatrix import RGBMatrix, RGBMatrixOptions
-from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
-from RGBMatrixEmulator.graphics.font import Font  # noqa: F401
+if os.environ.get("LED_ENV") == "emulator":
+    from RGBMatrixEmulator import RGBMatrix, RGBMatrixOptions
+    from RGBMatrixEmulator.graphics.font import Font  # noqa: F401
+else:
+    from rgbmatrix import RGBMatrix, RGBMatrixOptions
+    from rgbmatrix.graphics.font import Font  # noqa: F401
 
 
 class Screen:
