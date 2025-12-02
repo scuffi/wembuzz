@@ -15,6 +15,7 @@ else:
 
 Font = graphics.Font
 
+
 class Screen:
     """Main screen class for managing LED matrix display and components."""
 
@@ -22,7 +23,7 @@ class Screen:
         self,
         width: int = 64,
         height: int = 32,
-        hardware_mapping: str = "regular",
+        hardware_mapping: str = "adafruit-hat",
         chain_length: int = 1,
         parallel: int = 1,
         pwm_bits: int = 11,
