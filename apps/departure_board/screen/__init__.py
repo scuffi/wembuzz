@@ -10,6 +10,7 @@ from .components import (
     LineComponent,
     PixelComponent,
     BorderComponent,
+    CrowdingComponent,
 )
 from .utils import (
     Position,
@@ -36,6 +37,7 @@ __all__ = [
     "LineComponent",
     "PixelComponent",
     "BorderComponent",
+    "CrowdingComponent",
     "Position",
     "Color",
     "Region",

@@ -4,6 +4,8 @@ import time
 import sys
 import os
 
+from datetime import datetime
+
 os.environ["LED_ENV"] = "emulator"
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +19,7 @@ from screen import (
     RectangleComponent,
     PixelComponent,
     BorderComponent,
+    CrowdingComponent,
     Region,
     RED,
     GREEN,
@@ -366,6 +369,29 @@ def planned_layout():
         screen.add_component(name, component)
         return component
 
+    def create_crowding(
+        screen,
+        name,
+        x,
+        y,
+        width,
+        value=0,
+        colours=None,
+        inactive_color=Color(40, 40, 40),
+    ):
+        crowding_region = Region(x, y, width, font.height)
+        crowding = CrowdingComponent(
+            crowding_region,
+            font=font,
+            value=value,  # Start with 3 out of 5 icons lit
+            level_colors=colours,  # Dynamic colors based on level
+            inactive_color=inactive_color,  # Dark grey
+            spacing=1,
+            align="left",
+        )
+        screen.add_component(name, crowding)
+        return crowding
+
     def create_rectangle(screen, name, x, y, width, height, color=WHITE):
         """Helper to create and add a rectangle at specific pixel coordinates."""
         region = Region(x, y, width, height)
@@ -447,13 +473,30 @@ def planned_layout():
     real_time = create_text(
         screen,
         "real_time",
-        "10:00:36",
-        0,
+        datetime.now().strftime("%H:%M:%S"),
+        48,
         40,
-        96,
+        48,
         font,
         WHITE,
         "right",
+    )
+
+    crowding = create_crowding(
+        screen,
+        "crowding",
+        0,
+        40,
+        48,
+        3,
+        colours={
+            1: Color(0, 200, 0),
+            2: Color(150, 200, 0),
+            3: Color(255, 200, 0),
+            4: Color(255, 100, 0),
+            5: Color(255, 0, 0),
+        },
+        inactive_color=Color(40, 40, 40),
     )
 
     screen.render()
@@ -471,30 +514,16 @@ def planned_layout():
         iteration += 1
 
         if iteration % 2 == 0:
-            station_number.set_text(
-                "2", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            station_name.set_text(
-                "Stanmore", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            time_to_arrival.set_text(
-                "~6m", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
+            station_number.set_text("2", animation=None, duration=20)
+            station_name.set_text("Stanmore", animation=None, duration=20)
+            time_to_arrival.set_text("~6m", animation=None, duration=20)
         else:
-            station_number.set_text(
-                "3", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            station_name.set_text(
-                "Aldgate", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            time_to_arrival.set_text(
-                "~10m", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
+            station_number.set_text("3", animation=None, duration=20)
+            station_name.set_text("Aldgate", animation=None, duration=20)
+            time_to_arrival.set_text("~10m", animation=None, duration=20)
 
     def update_time():
         """Update the real-time clock display."""
-        from datetime import datetime
-
         current_time_str = datetime.now().strftime("%H:%M:%S")
         real_time.set_text(current_time_str)
 
@@ -516,6 +545,63 @@ def planned_layout():
 
         # Render loop - runs at ~50 FPS
         time.sleep(0.1)
+
+
+def example_crowding():
+    """Example: Crowding indicator component."""
+    screen = Screen(width=96, height=48, brightness=100)
+
+    # Load font
+    font = Font()
+    font.LoadFont("./apps/departure_board/font.bdf")
+
+    # Create a label
+    label_region = Region(0, 10, 96, font.height)
+    label = TextComponent(
+        label_region,
+        text="Crowding Level:",
+        color=WHITE,
+        align="center",
+        vertical_align="top",
+        font=font,
+    )
+    screen.add_component("label", label)
+
+    # Create crowding component with custom level colors
+    # Colors change based on crowding level (green -> yellow -> red)
+    custom_colors = {
+        1: Color(0, 200, 0),  # Green - low crowding
+        2: Color(150, 200, 0),  # Yellow-green
+        3: Color(255, 200, 0),  # Yellow/amber - medium crowding
+        4: Color(255, 100, 0),  # Orange
+        5: Color(255, 0, 0),  # Red - high crowding
+    }
+
+    crowding_region = Region(0, 25, 96, font.height + 4)
+    crowding = CrowdingComponent(
+        crowding_region,
+        font=font,
+        value=3,  # Start with 3 out of 5 icons lit
+        level_colors=custom_colors,  # Dynamic colors based on level
+        inactive_color=Color(40, 40, 40),  # Dark grey
+        spacing=2,
+    )
+    screen.add_component("crowding", crowding)
+
+    # Initial render
+    screen.render()
+    print("Crowding indicator demo - cycling through values 0-5...")
+    print("Notice how colors change: green (1) -> yellow (3) -> red (5)")
+
+    # Cycle through values - set_value() automatically triggers screen sync
+    # No need for screen.update() loop!
+    for cycle in range(3):  # 3 complete cycles
+        for value in range(6):  # 0 to 5
+            print(f"  Setting crowding value to {value}")
+            crowding.set_value(value)  # This triggers _sync() internally
+            time.sleep(1)
+
+    print("Crowding demo complete!")
 
 
 if __name__ == "__main__":
@@ -540,3 +626,4 @@ if __name__ == "__main__":
     # example_text_animations()
 
     planned_layout()
+    # example_crowding()

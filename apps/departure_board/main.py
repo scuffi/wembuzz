@@ -2,15 +2,17 @@ import time
 import os
 import sys
 
+from datetime import datetime
+
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from screen import (
     YELLOW,
     Color,
+    CrowdingComponent,
     Screen,
     TextComponent,
-    RectangleComponent,
     Region,
     GREEN,
     WHITE,
@@ -44,16 +46,28 @@ def planned_layout():
         screen.add_component(name, component)
         return component
 
-    def create_rectangle(screen, name, x, y, width, height, color=WHITE):
-        """Helper to create and add a rectangle at specific pixel coordinates."""
-        region = Region(x, y, width, height)
-        component = RectangleComponent(
-            region,
-            color=color,
-            fill=True,
+    def create_crowding(
+        screen,
+        name,
+        x,
+        y,
+        width,
+        value=0,
+        colours=None,
+        inactive_color=Color(40, 40, 40),
+    ):
+        crowding_region = Region(x, y, width, font.height)
+        crowding = CrowdingComponent(
+            crowding_region,
+            font=font,
+            value=value,  # Start with 3 out of 5 icons lit
+            level_colors=colours,  # Dynamic colors based on level
+            inactive_color=inactive_color,  # Dark grey
+            spacing=1,
+            align="left",
         )
-        screen.add_component(name, component)
-        return component
+        screen.add_component(name, crowding)
+        return crowding
 
     font = Font()
     font.LoadFont("./apps/departure_board/font.bdf")
@@ -99,13 +113,30 @@ def planned_layout():
     real_time = create_text(
         screen,
         "real_time",
-        "10:00:36",
-        0,
+        datetime.now().strftime("%H:%M:%S"),
+        48,
         40,
-        96,
+        48,
         font,
         WHITE,
         "right",
+    )
+
+    crowding = create_crowding(
+        screen,
+        "crowding",
+        0,
+        40,
+        48,
+        3,
+        colours={
+            1: Color(0, 200, 0),
+            2: Color(150, 200, 0),
+            3: Color(255, 200, 0),
+            4: Color(255, 100, 0),
+            5: Color(255, 0, 0),
+        },
+        inactive_color=Color(40, 40, 40),
     )
 
     # Initial render
@@ -134,16 +165,11 @@ def planned_layout():
 
     def update_time():
         """Update the real-time clock display."""
-        from datetime import datetime
-
         current_time_str = datetime.now().strftime("%H:%M:%S")
         real_time.set_text(current_time_str)
 
     # Initialize time display
     update_time()
-
-    print("Running with sync API - no update loop needed...")
-    print("Components will sync themselves when they change.")
 
     # Main loop - just check timers, components handle their own rendering
     while True:
