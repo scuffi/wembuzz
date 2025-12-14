@@ -2,8 +2,6 @@ import time
 import os
 import sys
 
-os.environ["LED_ENV"] = "emulator"
-
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
