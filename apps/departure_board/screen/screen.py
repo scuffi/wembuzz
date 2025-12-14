@@ -200,11 +200,37 @@ class Screen:
 
     def sync(self) -> None:
         """
-        Sync the display - render only dirty components and swap.
+        Sync the display - render all visible components and swap.
         This is called automatically by components when they change.
         Use this for on-demand rendering instead of a continuous update loop.
+
+        Note: We render ALL components (not just dirty ones) because SwapOnVSync
+        gives us a fresh canvas, and we need to maintain the full display state.
+        Components will skip pixel updates internally if they haven't changed.
         """
-        self.render(clear=False)
+        # Don't clear - we want to preserve existing state
+        # But we need to render ALL components because SwapOnVSync gives us a fresh canvas
+        # Collect all components
+        all_components: List[Component] = []
+
+        if self.layout:
+            all_components.extend(self.layout.get_all_components().values())
+
+        # Add standalone components (not in layout)
+        for component in self.components.values():
+            if component not in all_components:
+                all_components.append(component)
+
+        # Render ALL visible components (not just dirty ones)
+        # Components will internally skip pixel updates if they haven't changed
+        for component in all_components:
+            if component.visible:
+                component.render(self.canvas)
+                # Mark clean after rendering (component decides if it actually updated)
+                component.mark_clean()
+
+        # Swap canvas
+        self.canvas = self.matrix.SwapOnVSync(self.canvas)
 
     def set_brightness(self, brightness: int) -> None:
         """Set display brightness (0-100)."""

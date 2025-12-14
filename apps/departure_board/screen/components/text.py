@@ -94,13 +94,9 @@ class TextComponent(Component):
             self._last_rendered_progress = self._animation_progress
             return
 
-        # For static text, ONLY render when _needs_clear is True
-        # _needs_clear is only set by set_text() or set_color(), so we only render when explicitly changed
-        if not self._needs_clear:
-            # Static text hasn't changed, skip rendering completely to avoid flickering
-            return
-
-        # Clear region (text/color changed, need to rerender)
+        # For static text, always render to maintain display state
+        # SwapOnVSync gives us a fresh back buffer, so we need to redraw everything
+        # Always clear the region first (we're drawing to a fresh buffer)
         clear_color = (
             self.background_color.as_tuple() if self.background_color else (0, 0, 0)
         )
@@ -108,7 +104,7 @@ class TextComponent(Component):
             for x in range(self.region.x, self.region.x + self.region.width):
                 canvas.SetPixel(x, y, clear_color[0], clear_color[1], clear_color[2])
 
-        # Render static text
+        # Always render static text (to maintain state after canvas swap)
         self._render_static(canvas)
 
         # Update cache and reset flags
@@ -120,8 +116,9 @@ class TextComponent(Component):
 
     def _render_static(self, canvas) -> None:
         """Render static text (no animation)."""
+        # If text is empty, region was already cleared in render(), so we're done
         if not self.text:
-            return  # Region already cleared if needed
+            return
 
         if not self.font:
             return
