@@ -10,7 +10,6 @@ from screen import (
     Color,
     Screen,
     TextComponent,
-    AnimationType,
     RectangleComponent,
     Region,
     GREEN,
@@ -125,25 +124,13 @@ def planned_layout():
         iteration += 1
 
         if iteration % 2 == 0:
-            station_number.set_text(
-                "2", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            station_name.set_text(
-                "Stanmore", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            time_to_arrival.set_text(
-                "~6m", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
+            station_number.set_text("2", animation=None, duration=20)
+            station_name.set_text("Stanmore", animation=None, duration=20)
+            time_to_arrival.set_text("~6m", animation=None, duration=20)
         else:
-            station_number.set_text(
-                "3", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            station_name.set_text(
-                "Aldgate", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
-            time_to_arrival.set_text(
-                "~10m", animation=AnimationType.SLIDE_DOWN, duration=20
-            )
+            station_number.set_text("3", animation=None, duration=20)
+            station_name.set_text("Aldgate", animation=None, duration=20)
+            time_to_arrival.set_text("~10m", animation=None, duration=20)
 
     def update_time():
         """Update the real-time clock display."""
