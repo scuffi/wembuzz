@@ -1,8 +1,11 @@
 """Base component class for all display components."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, TYPE_CHECKING
 from ..utils import Position, Color, Region
+
+if TYPE_CHECKING:
+    from ..screen import Screen
 
 
 class Component(ABC):
@@ -26,6 +29,7 @@ class Component(ABC):
         self.background_color = background_color
         self.visible = visible
         self._dirty = True  # Track if component needs redrawing
+        self._screen: Optional["Screen"] = None  # Reference to parent screen
 
     @abstractmethod
     def render(self, canvas) -> None:
@@ -98,3 +102,13 @@ class Component(ABC):
         if self.background_color != color:
             self.background_color = color
             self.mark_dirty()
+            self._sync()
+
+    def set_screen(self, screen: Optional["Screen"]) -> None:
+        """Set the screen reference for this component."""
+        self._screen = screen
+
+    def _sync(self) -> None:
+        """Trigger a screen sync if screen is available."""
+        if self._screen is not None:
+            self._screen.sync()

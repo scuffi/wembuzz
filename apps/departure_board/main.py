@@ -109,9 +109,10 @@ def planned_layout():
         "right",
     )
 
+    # Initial render
     screen.render()
 
-    # Time-based scheduling - no threading needed
+    # Time-based scheduling - components will sync themselves when they change
     last_update_time = time.time()
     last_time_update = time.time()
     update_interval = 5.0  # Run update every 5 seconds
@@ -154,7 +155,10 @@ def planned_layout():
     # Initialize time display
     update_time()
 
-    print("Running animated border example...")
+    print("Running with sync API - no update loop needed...")
+    print("Components will sync themselves when they change.")
+
+    # Main loop - just check timers, components handle their own rendering
     while True:
         current_time = time.time()
 
@@ -168,9 +172,9 @@ def planned_layout():
             update_time()
             last_time_update = current_time
 
-        # Render loop - runs at ~50 FPS
-        screen.update()  # Update only dirty components
-        time.sleep(0.02)  # ~50 FPS for smooth
+        # No render loop! Components sync themselves when they change.
+        # Just sleep to avoid busy-waiting
+        time.sleep(0.1)  # Check timers every 100ms
 
 
 if __name__ == "__main__":

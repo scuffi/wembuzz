@@ -122,6 +122,9 @@ class Screen:
         if component.region.y + component.region.height > self.height:
             raise ValueError(f"Component {name} extends beyond screen height")
 
+        # Set screen reference on component
+        component.set_screen(self)
+
         # If layout exists and region_name provided, bind to layout region
         if self.layout and region_name:
             self.layout.add_component(name, component, region_name)
@@ -193,6 +196,14 @@ class Screen:
 
     def update(self) -> None:
         """Update the display (render and swap)."""
+        self.render(clear=False)
+
+    def sync(self) -> None:
+        """
+        Sync the display - render only dirty components and swap.
+        This is called automatically by components when they change.
+        Use this for on-demand rendering instead of a continuous update loop.
+        """
         self.render(clear=False)
 
     def set_brightness(self, brightness: int) -> None:

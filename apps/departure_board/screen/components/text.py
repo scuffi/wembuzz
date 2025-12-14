@@ -1,5 +1,6 @@
 """Text component for displaying text on the LED matrix."""
 
+import threading
 from typing import Optional
 from enum import Enum
 from ..utils import Position, Color, Region
@@ -67,14 +68,18 @@ class TextComponent(Component):
         self._last_rendered_progress = -1.0
         self._needs_clear = True  # Only clear when text actually changes
 
+        # Animation timer for self-updating animations
+        self._animation_timer: Optional[threading.Timer] = None
+        self._animation_frame_duration = 0.033  # ~30 FPS for animations
+
     def render(self, canvas) -> None:
         """Render text to the canvas."""
         if not self.visible:
             return
 
-        # Update animation if in progress
+        # Don't update animation here - it's handled by timer
+        # Just render the current animation state
         if self._is_animating:
-            self.update_animation()
             # Always render during animation - position/opacity changes every frame
             # Clear region every frame during animation for smooth movement
             clear_color = (
@@ -502,7 +507,7 @@ class TextComponent(Component):
                 current_x += char_width
 
     def update_animation(self) -> None:
-        """Update animation progress. Call this each frame during animation."""
+        """Update animation progress. Called by animation timer."""
         if not self._is_animating:
             return
 
@@ -514,11 +519,20 @@ class TextComponent(Component):
             self.text = self._new_text
             self._is_animating = False
             self._animation_type = AnimationType.NONE
+            # Stop animation timer
+            if self._animation_timer:
+                self._animation_timer.cancel()
+                self._animation_timer = None
             # Reset cache and mark for rerender of final static state
             self._last_rendered_text = ""
             self._needs_clear = True
-            # Don't call mark_dirty() - we use _needs_clear for static text
-        # Don't mark dirty on every frame - only render when progress changes significantly
+            # Sync screen to show final state
+            self._sync()
+        else:
+            # Sync screen for this animation frame (shows current progress)
+            self._sync()
+            # Schedule next animation frame
+            self._schedule_next_animation_frame()
 
     def is_animating(self) -> bool:
         """Check if text is currently animating."""
@@ -532,6 +546,22 @@ class TextComponent(Component):
         # For static text, only dirty if _needs_clear is True (set by set_text/set_color)
         # Ignore the _dirty flag for static text to prevent unnecessary rerenders
         return self._needs_clear
+
+    def _schedule_next_animation_frame(self) -> None:
+        """Schedule the next animation frame update."""
+        if not self._is_animating:
+            return
+
+        # Cancel existing timer if any
+        if self._animation_timer:
+            self._animation_timer.cancel()
+
+        # Schedule next frame
+        self._animation_timer = threading.Timer(
+            self._animation_frame_duration, self.update_animation
+        )
+        self._animation_timer.daemon = True
+        self._animation_timer.start()
 
     def set_text(
         self, text: str, animation: Optional[AnimationType] = None, duration: int = 30
@@ -547,6 +577,11 @@ class TextComponent(Component):
         if self.text == text and not self._is_animating:
             return
 
+        # Stop any existing animation
+        if self._animation_timer:
+            self._animation_timer.cancel()
+            self._animation_timer = None
+
         if animation is None or animation == AnimationType.NONE:
             # Instant change
             self.text = text
@@ -556,7 +591,8 @@ class TextComponent(Component):
             # This is the ONLY way static text gets marked for rendering
             self._needs_clear = True
             self._last_rendered_text = ""  # Force rerender
-            # Don't call mark_dirty() - we use _needs_clear instead for static text
+            # Sync screen immediately for static text change
+            self._sync()
         else:
             # Start animation
             self._old_text = self.text
@@ -568,7 +604,9 @@ class TextComponent(Component):
             # Mark that we need to clear at the start of animation
             self._needs_clear = True
             self._last_rendered_progress = -1.0  # Reset progress cache
-            self.mark_dirty()
+            # Render first frame immediately, then start animation timer
+            self._sync()
+            self._schedule_next_animation_frame()
 
     def _draw_char_simple(self, canvas, char: str, x: int, y: int) -> None:
         """Simple character rendering (placeholder - very basic)."""
@@ -627,7 +665,8 @@ class TextComponent(Component):
             # Mark that we need to clear and rerender
             # This is the ONLY way static text gets marked for rendering
             self._needs_clear = True
-            # Don't call mark_dirty() - we use _needs_clear instead for static text
+            # Sync screen immediately
+            self._sync()
 
     def set_align(self, align: str) -> None:
         """Update horizontal alignment."""
@@ -643,4 +682,5 @@ class TextComponent(Component):
             self.vertical_align = vertical_align
             # Mark that we need to clear and rerender
             self._needs_clear = True
-            # Don't call mark_dirty() - we use _needs_clear for static text
+            # Sync screen immediately
+            self._sync()
