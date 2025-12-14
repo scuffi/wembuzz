@@ -4,6 +4,7 @@ import time
 import sys
 import os
 
+os.environ["LED_ENV"] = "emulator"
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -521,9 +522,6 @@ def planned_layout():
 
 if __name__ == "__main__":
     # Set environment variable for emulator testing
-    import os
-
-    os.environ["LED_ENV"] = "emulator"
 
     # print("Running basic example...")
     # example_basic()

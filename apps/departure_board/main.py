@@ -2,6 +2,8 @@ import time
 import os
 import sys
 
+os.environ["LED_ENV"] = "emulator"
+
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -170,7 +172,7 @@ def planned_layout():
 
         # Render loop - runs at ~50 FPS
         screen.update()  # Update only dirty components
-        # time.sleep(0.05)  # ~50 FPS for smooth
+        time.sleep(0.02)  # ~50 FPS for smooth
 
 
 if __name__ == "__main__":

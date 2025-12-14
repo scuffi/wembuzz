@@ -61,49 +61,71 @@ class TextComponent(Component):
         self._new_text = ""
         self._is_animating = False
 
+        # Caching to avoid unnecessary rerenders
+        self._last_rendered_text = ""
+        self._last_rendered_color = None
+        self._last_rendered_progress = -1.0
+        self._needs_clear = True  # Only clear when text actually changes
+
     def render(self, canvas) -> None:
         """Render text to the canvas."""
         if not self.visible:
             return
 
-        # Draw background if specified
-        if self.background_color:
-            bg = self.background_color.as_tuple()
-            for y in range(self.region.y, self.region.y + self.region.height):
-                for x in range(self.region.x, self.region.x + self.region.width):
-                    canvas.SetPixel(x, y, bg[0], bg[1], bg[2])
-
         # Update animation if in progress
         if self._is_animating:
             self.update_animation()
-
-        # Render based on animation state
-        if self._is_animating:
+            # Always render during animation - position/opacity changes every frame
+            # Clear region every frame during animation for smooth movement
+            clear_color = (
+                self.background_color.as_tuple() if self.background_color else (0, 0, 0)
+            )
+            for y in range(self.region.y, self.region.y + self.region.height):
+                for x in range(self.region.x, self.region.x + self.region.width):
+                    canvas.SetPixel(
+                        x, y, clear_color[0], clear_color[1], clear_color[2]
+                    )
             self._render_animated(canvas)
-        else:
-            self._render_static(canvas)
+            self._last_rendered_progress = self._animation_progress
+            return
+
+        # For static text, only render if text or color actually changed
+        if (
+            self.text == self._last_rendered_text
+            and self.color == self._last_rendered_color
+            and not self._needs_clear
+            and not self._dirty
+        ):
+            # Nothing changed, skip rendering to avoid flickering
+            return
+
+        # Clear region only when text/color changed
+        if self._needs_clear:
+            clear_color = (
+                self.background_color.as_tuple() if self.background_color else (0, 0, 0)
+            )
+            for y in range(self.region.y, self.region.y + self.region.height):
+                for x in range(self.region.x, self.region.x + self.region.width):
+                    canvas.SetPixel(
+                        x, y, clear_color[0], clear_color[1], clear_color[2]
+                    )
+            self._needs_clear = False
+
+        # Render static text
+        self._render_static(canvas)
+        self._last_rendered_text = self.text
+        self._last_rendered_color = self.color
+        self._last_rendered_progress = -1.0
 
     def _render_static(self, canvas) -> None:
         """Render static text (no animation)."""
         if not self.text:
-            # Clear region if text is empty
-            if not self.background_color:
-                for y in range(self.region.y, self.region.y + self.region.height):
-                    for x in range(self.region.x, self.region.x + self.region.width):
-                        canvas.SetPixel(x, y, 0, 0, 0)
-            return
+            return  # Region already cleared if needed
 
         if not self.font:
             return
 
-        # Clear the region first to remove old text pixels
-        # This is needed when text is updated without animation
-        # Background color is already drawn in render(), so only clear if no background
-        if not self.background_color:
-            for y in range(self.region.y, self.region.y + self.region.height):
-                for x in range(self.region.x, self.region.x + self.region.width):
-                    canvas.SetPixel(x, y, 0, 0, 0)
-
+        # No need to clear here - already cleared in render() if needed
         import os
 
         if os.environ.get("LED_ENV") == "emulator":
@@ -117,14 +139,8 @@ class TextComponent(Component):
 
     def _render_animated(self, canvas) -> None:
         """Render animated text based on animation type."""
-        # Clear the region first to remove old text pixels
-        # This prevents accumulation of pixels during animation
-        clear_color = (
-            self.background_color.as_tuple() if self.background_color else (0, 0, 0)
-        )
-        for y in range(self.region.y, self.region.y + self.region.height):
-            for x in range(self.region.x, self.region.x + self.region.width):
-                canvas.SetPixel(x, y, clear_color[0], clear_color[1], clear_color[2])
+        # Region already cleared in render() if needed
+        # No need to clear every frame during animation - just update the animation frame
 
         import os
 
@@ -502,8 +518,12 @@ class TextComponent(Component):
             self.text = self._new_text
             self._is_animating = False
             self._animation_type = AnimationType.NONE
-
-        self.mark_dirty()
+            # Mark dirty when animation completes to ensure final state is rendered
+            self.mark_dirty()
+            # Reset cache to force rerender of final state
+            self._last_rendered_text = ""
+            self._needs_clear = True
+        # Don't mark dirty on every frame - only render when progress changes significantly
 
     def is_animating(self) -> bool:
         """Check if text is currently animating."""
@@ -511,7 +531,10 @@ class TextComponent(Component):
 
     def is_dirty(self) -> bool:
         """Return True if animating or if dirty flag is set."""
-        return self._is_animating or self._dirty
+        # During animation, always consider dirty (position/opacity changes every frame)
+        if self._is_animating:
+            return True
+        return self._dirty
 
     def set_text(
         self, text: str, animation: Optional[AnimationType] = None, duration: int = 30
@@ -532,6 +555,9 @@ class TextComponent(Component):
             self.text = text
             self._is_animating = False
             self._animation_type = AnimationType.NONE
+            # Mark that we need to clear and rerender
+            self._needs_clear = True
+            self._last_rendered_text = ""  # Force rerender
             self.mark_dirty()
         else:
             # Start animation
@@ -541,6 +567,9 @@ class TextComponent(Component):
             self._animation_progress = 0.0
             self._animation_duration = duration
             self._is_animating = True
+            # Mark that we need to clear at the start of animation
+            self._needs_clear = True
+            self._last_rendered_progress = -1.0  # Reset progress cache
             self.mark_dirty()
 
     def _draw_char_simple(self, canvas, char: str, x: int, y: int) -> None:
@@ -596,6 +625,8 @@ class TextComponent(Component):
         """Update text color."""
         if self.color != color:
             self.color = color
+            self._last_rendered_color = None  # Force rerender
+            self._needs_clear = True
             self.mark_dirty()
 
     def set_align(self, align: str) -> None:
