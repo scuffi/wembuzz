@@ -89,33 +89,29 @@ class TextComponent(Component):
             self._last_rendered_progress = self._animation_progress
             return
 
-        # For static text, only render if text or color actually changed
-        if (
-            self.text == self._last_rendered_text
-            and self.color == self._last_rendered_color
-            and not self._needs_clear
-            and not self._dirty
-        ):
-            # Nothing changed, skip rendering to avoid flickering
+        # For static text, ONLY render when _needs_clear is True
+        # _needs_clear is only set by set_text() or set_color(), so we only render when explicitly changed
+        if not self._needs_clear:
+            # Static text hasn't changed, skip rendering completely to avoid flickering
             return
 
-        # Clear region only when text/color changed
-        if self._needs_clear:
-            clear_color = (
-                self.background_color.as_tuple() if self.background_color else (0, 0, 0)
-            )
-            for y in range(self.region.y, self.region.y + self.region.height):
-                for x in range(self.region.x, self.region.x + self.region.width):
-                    canvas.SetPixel(
-                        x, y, clear_color[0], clear_color[1], clear_color[2]
-                    )
-            self._needs_clear = False
+        # Clear region (text/color changed, need to rerender)
+        clear_color = (
+            self.background_color.as_tuple() if self.background_color else (0, 0, 0)
+        )
+        for y in range(self.region.y, self.region.y + self.region.height):
+            for x in range(self.region.x, self.region.x + self.region.width):
+                canvas.SetPixel(x, y, clear_color[0], clear_color[1], clear_color[2])
 
         # Render static text
         self._render_static(canvas)
+
+        # Update cache and reset flags
         self._last_rendered_text = self.text
         self._last_rendered_color = self.color
         self._last_rendered_progress = -1.0
+        self._needs_clear = False
+        self._dirty = False  # Mark clean since we just rendered
 
     def _render_static(self, canvas) -> None:
         """Render static text (no animation)."""
@@ -518,11 +514,10 @@ class TextComponent(Component):
             self.text = self._new_text
             self._is_animating = False
             self._animation_type = AnimationType.NONE
-            # Mark dirty when animation completes to ensure final state is rendered
-            self.mark_dirty()
-            # Reset cache to force rerender of final state
+            # Reset cache and mark for rerender of final static state
             self._last_rendered_text = ""
             self._needs_clear = True
+            # Don't call mark_dirty() - we use _needs_clear for static text
         # Don't mark dirty on every frame - only render when progress changes significantly
 
     def is_animating(self) -> bool:
@@ -530,11 +525,13 @@ class TextComponent(Component):
         return self._is_animating
 
     def is_dirty(self) -> bool:
-        """Return True if animating or if dirty flag is set."""
+        """Return True if animating or if needs to be rendered."""
         # During animation, always consider dirty (position/opacity changes every frame)
         if self._is_animating:
             return True
-        return self._dirty
+        # For static text, only dirty if _needs_clear is True (set by set_text/set_color)
+        # Ignore the _dirty flag for static text to prevent unnecessary rerenders
+        return self._needs_clear
 
     def set_text(
         self, text: str, animation: Optional[AnimationType] = None, duration: int = 30
@@ -556,9 +553,10 @@ class TextComponent(Component):
             self._is_animating = False
             self._animation_type = AnimationType.NONE
             # Mark that we need to clear and rerender
+            # This is the ONLY way static text gets marked for rendering
             self._needs_clear = True
             self._last_rendered_text = ""  # Force rerender
-            self.mark_dirty()
+            # Don't call mark_dirty() - we use _needs_clear instead for static text
         else:
             # Start animation
             self._old_text = self.text
@@ -626,17 +624,23 @@ class TextComponent(Component):
         if self.color != color:
             self.color = color
             self._last_rendered_color = None  # Force rerender
+            # Mark that we need to clear and rerender
+            # This is the ONLY way static text gets marked for rendering
             self._needs_clear = True
-            self.mark_dirty()
+            # Don't call mark_dirty() - we use _needs_clear instead for static text
 
     def set_align(self, align: str) -> None:
         """Update horizontal alignment."""
         if self.align != align:
             self.align = align
-            self.mark_dirty()
+            # Mark that we need to clear and rerender
+            self._needs_clear = True
+            # Don't call mark_dirty() - we use _needs_clear for static text
 
     def set_vertical_align(self, vertical_align: str) -> None:
         """Update vertical alignment."""
         if self.vertical_align != vertical_align:
             self.vertical_align = vertical_align
-            self.mark_dirty()
+            # Mark that we need to clear and rerender
+            self._needs_clear = True
+            # Don't call mark_dirty() - we use _needs_clear for static text

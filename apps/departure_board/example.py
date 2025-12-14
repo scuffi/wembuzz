@@ -501,7 +501,6 @@ def planned_layout():
     # Initialize time display
     update_time()
 
-    print("Running animated border example...")
     while True:
         current_time = time.time()
 
