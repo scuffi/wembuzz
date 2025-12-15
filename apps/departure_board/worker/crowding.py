@@ -16,7 +16,7 @@ def _scale_crowding(value: float, round_result=True) -> float | int:
     return int(round(score)) if round_result else score
 
 
-def get_station_statuses(station: Station) -> list[StationStatus]:
+def get_station_status(station: Station) -> StationStatus:
     response = requests.get(f"https://api.tfl.gov.uk/crowding/{station.naptan}/Live")
     if response.status_code != 200:
         message = response.json().get("message", "Unknown error")

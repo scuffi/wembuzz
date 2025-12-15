@@ -1,10 +1,13 @@
+from collections import defaultdict
 import requests
 from datetime import datetime, timezone
 
 from models import Arrival, ArrivalsResponse, Station
 
 
-def get_arrivals(station: Station, direction: str = "outbound") -> list[Arrival]:
+def get_arrivals(
+    station: Station, direction: str = "outbound"
+) -> dict[str, list[Arrival]]:
     response = requests.get(
         f"https://api.tfl.gov.uk/Line/metropolitan,jubilee/Arrivals/{station.stop_point_id}?direction={direction}"
     )
@@ -17,16 +20,33 @@ def get_arrivals(station: Station, direction: str = "outbound") -> list[Arrival]
         ArrivalsResponse.model_validate(item) for item in response.json()
     ]
 
-    return [
-        Arrival(
-            id=arrival.id,
-            line_id=arrival.lineId,
-            platform_name=arrival.platformName,
-            direction=arrival.direction,
-            arrival_time=datetime.fromisoformat(arrival.expectedArrival).astimezone(
-                timezone.utc
-            ),
-            destination_name=arrival.destinationName,
-        )
-        for arrival in structured_response
-    ]
+    return _get_arrival_groups(
+        [
+            Arrival(
+                id=arrival.id,
+                line_id=arrival.lineId,
+                platform_name=arrival.platformName,
+                direction=arrival.direction,
+                arrival_time=datetime.fromisoformat(arrival.expectedArrival).astimezone(
+                    timezone.utc
+                ),
+                destination_name=arrival.destinationName,
+            )
+            for arrival in structured_response
+        ]
+    )
+
+
+def _get_arrival_groups(arrivals: list[Arrival]) -> dict[str, list[Arrival]]:
+    """Group arrivals by line_id and sort each group by arrival_time."""
+    groups = defaultdict[str, list[Arrival]](list)
+    for arrival in arrivals:
+        groups[arrival.line_id].append(arrival)
+
+    # Sort each group by arrival_time
+    for line_id in groups:
+        groups[line_id].sort(key=lambda a: a.arrival_time)
+        for index, arrival in enumerate(groups[line_id]):
+            arrival.index = index
+
+    return groups
