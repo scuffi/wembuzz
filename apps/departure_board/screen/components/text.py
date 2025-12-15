@@ -33,6 +33,7 @@ class TextComponent(Component):
         align: str = "left",  # "left", "center", "right"
         vertical_align: str = "top",  # "top", "center", "bottom"
         visible: bool = True,
+        max_text_length: Optional[int] = None,
     ):
         """
         Initialize a text component.
@@ -46,9 +47,12 @@ class TextComponent(Component):
             align: Horizontal alignment ("left", "center", "right")
             vertical_align: Vertical alignment ("top", "center", "bottom")
             visible: Whether the component is visible
+            max_text_length: Optional maximum text length. If specified, text will be
+                trimmed to this length and '...' will be appended if truncated.
         """
         super().__init__(region, background_color, visible)
-        self.text = text
+        self.max_text_length = max_text_length
+        self.text = self._trim_text(text) if max_text_length is not None else text
         self.font = font
         self.color = color
         self.align = align
@@ -71,6 +75,20 @@ class TextComponent(Component):
         # Animation timer for self-updating animations
         self._animation_timer: Optional[threading.Timer] = None
         self._animation_frame_duration = 0.033  # ~30 FPS for animations
+
+    def _trim_text(self, text: str) -> str:
+        """
+        Trim text to max_text_length and append '...' if truncated.
+
+        Args:
+            text: The text to trim
+
+        Returns:
+            Trimmed text with '...' appended if it was truncated
+        """
+        if self.max_text_length is None or len(text) <= self.max_text_length:
+            return text
+        return text[: self.max_text_length] + "..."
 
     def render(self, canvas) -> None:
         """Render text to the canvas."""
@@ -571,7 +589,12 @@ class TextComponent(Component):
             animation: Animation type (None = instant change)
             duration: Animation duration in frames
         """
-        if self.text == text and not self._is_animating:
+        # Apply trimming if max_text_length is set
+        trimmed_text = (
+            self._trim_text(text) if self.max_text_length is not None else text
+        )
+
+        if self.text == trimmed_text and not self._is_animating:
             return
 
         # Stop any existing animation
@@ -581,7 +604,7 @@ class TextComponent(Component):
 
         if animation is None or animation == AnimationType.NONE:
             # Instant change
-            self.text = text
+            self.text = trimmed_text
             self._is_animating = False
             self._animation_type = AnimationType.NONE
             # Mark that we need to clear and rerender
@@ -593,7 +616,7 @@ class TextComponent(Component):
         else:
             # Start animation
             self._old_text = self.text
-            self._new_text = text
+            self._new_text = trimmed_text
             self._animation_type = animation
             self._animation_progress = 0.0
             self._animation_duration = duration

@@ -44,3 +44,4 @@ class Arrival(BaseModel):
     arrival_time: datetime
     destination_name: str
     index: int | None = None
+    time_to_station: int | None = None

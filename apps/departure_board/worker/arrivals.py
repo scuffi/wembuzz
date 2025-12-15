@@ -1,4 +1,5 @@
 from collections import defaultdict
+from loguru import logger
 import requests
 from datetime import datetime, timezone
 
@@ -20,21 +21,27 @@ def get_arrivals(
         ArrivalsResponse.model_validate(item) for item in response.json()
     ]
 
-    return _get_arrival_groups(
-        [
-            Arrival(
-                id=arrival.id,
-                line_id=arrival.lineId,
-                platform_name=arrival.platformName,
-                direction=arrival.direction,
-                arrival_time=datetime.fromisoformat(arrival.expectedArrival).astimezone(
-                    timezone.utc
-                ),
-                destination_name=arrival.destinationName,
-            )
-            for arrival in structured_response
-        ]
+    all_arrivals = [
+        Arrival(
+            id=arrival.id,
+            line_id=arrival.lineId,
+            platform_name=arrival.platformName,
+            direction=arrival.direction,
+            arrival_time=datetime.fromisoformat(arrival.expectedArrival).astimezone(
+                timezone.utc
+            ),
+            destination_name=arrival.destinationName,
+            time_to_station=arrival.timeToStation,
+        )
+        for arrival in structured_response
+    ]
+
+    groups = _get_arrival_groups(all_arrivals)
+    logger.info(
+        f"🚂 Found {len(all_arrivals)} arrivals for station {station.name}. {', '.join([f'{lineid}:{len(group)}' for lineid, group in groups.items()])}"
     )
+
+    return groups
 
 
 def _get_arrival_groups(arrivals: list[Arrival]) -> dict[str, list[Arrival]]:
@@ -45,7 +52,7 @@ def _get_arrival_groups(arrivals: list[Arrival]) -> dict[str, list[Arrival]]:
 
     # Sort each group by arrival_time
     for line_id in groups:
-        groups[line_id].sort(key=lambda a: a.arrival_time)
+        groups[line_id].sort(key=lambda a: a.time_to_station)
         for index, arrival in enumerate(groups[line_id]):
             arrival.index = index
 

@@ -1,9 +1,7 @@
 import os
 import sys
 import time
-from datetime import datetime
-
-# os.environ["LED_ENV"] = "emulator"
+from datetime import datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -31,7 +29,10 @@ if __name__ == "__main__":
 
     # Rotate secondary arrivals every 5 seconds
     scheduler.add_job(
-        rotate_arrivals_schedule, "interval", seconds=5, next_run_time=datetime.now()
+        rotate_arrivals_schedule,
+        "interval",
+        seconds=5,
+        next_run_time=datetime.now() + timedelta(seconds=1),
     )
 
     # Update time every second

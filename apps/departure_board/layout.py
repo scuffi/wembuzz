@@ -22,7 +22,18 @@ from screen import (
 def setup_layout():
     """Example: Dynamically updating components."""
 
-    def create_text(screen, name, text, x, y, width, font, color=WHITE, align="left"):
+    def create_text(
+        screen,
+        name,
+        text,
+        x,
+        y,
+        width,
+        font,
+        color=WHITE,
+        align="left",
+        max_text_length=None,
+    ):
         """Helper to create and add a text line at specific pixel coordinates."""
         region = Region(x, y, width, font.height)
         component = TextComponent(
@@ -32,6 +43,7 @@ def setup_layout():
             align=align,
             vertical_align="top",
             font=font,
+            max_text_length=max_text_length,
         )
         screen.add_component(name, component)
         return component
@@ -66,13 +78,11 @@ def setup_layout():
     create_text(
         screen, "jubilee_primary_train_index", "1", 0, 0, 96, font, Color(160, 165, 169)
     )
-    create_text(
-        screen, "jubilee_primary_station_name", "Stanmore", 8, 0, 72, font, YELLOW
-    )
+    create_text(screen, "jubilee_primary_station_name", "", 8, 0, 72, font, YELLOW)
     create_text(
         screen,
         "jubilee_primary_time_to_arrival",
-        "~2m",
+        "",
         72,
         0,
         24,
@@ -82,13 +92,11 @@ def setup_layout():
     )
 
     create_text(
-        screen, "jubilee_later_train_index", "2", 0, 9, 95, font, Color(160, 165, 169)
+        screen, "jubilee_later_train_index", "", 0, 9, 95, font, Color(160, 165, 169)
     )
+    create_text(screen, "jubilee_later_station_name", "", 8, 9, 72, font, YELLOW)
     create_text(
-        screen, "jubilee_later_station_name", "Stanmore", 8, 9, 72, font, YELLOW
-    )
-    create_text(
-        screen, "jubilee_later_time_to_arrival", "~6m", 72, 9, 24, font, GREEN, "right"
+        screen, "jubilee_later_time_to_arrival", "", 72, 9, 24, font, GREEN, "right"
     )
 
     create_text(
@@ -102,12 +110,12 @@ def setup_layout():
         Color(155, 0, 86),
     )
     create_text(
-        screen, "metropolitan_primary_station_name", "Aldgate", 8, 20, 72, font, YELLOW
+        screen, "metropolitan_primary_station_name", "", 8, 20, 72, font, YELLOW
     )
     create_text(
         screen,
         "metropolitan_primary_time_to_arrival",
-        "~10m",
+        "",
         72,
         20,
         24,
@@ -119,20 +127,18 @@ def setup_layout():
     create_text(
         screen,
         "metropolitan_later_train_index",
-        "2",
+        "",
         0,
         29,
         95,
         font,
         Color(155, 0, 86),
     )
-    create_text(
-        screen, "metropolitan_later_station_name", "Aldgate", 8, 29, 72, font, YELLOW
-    )
+    create_text(screen, "metropolitan_later_station_name", "", 8, 29, 72, font, YELLOW)
     create_text(
         screen,
         "metropolitan_later_time_to_arrival",
-        "~16m",
+        "",
         72,
         29,
         24,
