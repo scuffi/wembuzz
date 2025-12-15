@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Fetch arrivals every minute
     scheduler.add_job(
-        fetch_arrivals_schedule, "interval", minutes=1, next_run_time=datetime.now()
+        fetch_arrivals_schedule, "interval", seconds=55, next_run_time=datetime.now()
     )
 
     # Rotate secondary arrivals every 5 seconds
