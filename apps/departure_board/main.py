@@ -3,7 +3,7 @@ import sys
 import time
 from datetime import datetime
 
-os.environ["LED_ENV"] = "emulator"
+# os.environ["LED_ENV"] = "emulator"
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
