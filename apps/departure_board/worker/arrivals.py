@@ -45,7 +45,7 @@ def _get_arrival_groups(arrivals: list[Arrival]) -> dict[str, list[Arrival]]:
 
     # Sort each group by arrival_time
     for line_id in groups:
-        groups[line_id].sort(key=lambda a: a.arrival_time, reverse=True)
+        groups[line_id].sort(key=lambda a: a.arrival_time)
         for index, arrival in enumerate(groups[line_id]):
             arrival.index = index
 

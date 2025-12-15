@@ -36,6 +36,8 @@ anyio==4.11.0
     #   httpx
     #   openai
     #   starlette
+apscheduler==3.11.1
+    # via -r requirements.in
 attrs==25.4.0
     # via
     #   -r requirements.in
@@ -307,6 +309,10 @@ typing-inspection==0.4.2
     #   -r requirements.in
     #   pydantic
     #   pydantic-settings
+tzlocal==5.3.1
+    # via
+    #   -r requirements.in
+    #   apscheduler
 urllib3==2.5.0
     # via
     #   -r requirements.in
