@@ -133,7 +133,7 @@ class TextComponent(Component):
 
         text_x, text_y = self._calculate_text_position()
         color = graphics.Color(*self.color.as_tuple())
-        graphics.DrawText(canvas, self.font, text_x, text_y, color, self.text)
+        graphics.DrawText(canvas, self.font, text_x, text_y, color, str(self.text))
 
     def _render_animated(self, canvas) -> None:
         """Render animated text based on animation type."""
